@@ -1,14 +1,14 @@
 import sqlite3
 import pandas as pd
 import smtplib
-from email.mime.text import MIMEText
+from email.mime.text import MIMEText   # ← ini yang benar
 import os
 
 DB_NAME = "log.db"
 
 # BONUS FEATURES:
 # 1. Hitung berapa kali CPU > 80%
-# 2. Buat ringkasan text (avg, min, max, top 3 CPU)
+# 2. Buat ringkasan teks (avg, min, max, top 3 CPU)
 # 3. Simulasi email alert kalau CPU > 90%
 # 4. Simpan ringkasan ke file teks
 
@@ -55,18 +55,15 @@ def generate_summary(df):
             f"Min: {df['cpu'].min():.2f}, "
             f"Max: {df['cpu'].max():.2f}"
         )
+
         # Top 3 peaks
         top3 = df.sort_values("cpu", ascending=False).head(3)
         lines.append("  Top 3 CPU peaks:")
         for _, row in top3.iterrows():
             if "timestamp" in df.columns:
-                lines.append(
-                    f"    - {row['timestamp']} -> {row['cpu']:.2f}%"
-                )
+                lines.append(f"    - {row['timestamp']} -> {row['cpu']:.2f}%")
             else:
-                lines.append(
-                    f"    - CPU: {row['cpu']:.2f}%"
-                )
+                lines.append(f"    - CPU: {row['cpu']:.2f}%")
         lines.append("")
 
     # Memory
@@ -104,9 +101,7 @@ def send_email_alert(message):
     print(message)
     print("=== END OF EMAIL ===\n")
 
-    # NOTE:
-    # Kalau mau benar-benar kirim email pakai SMTP,
-    # bisa pakai kode di bawah ini (HARUS isi akun sendiri):
+    # Contoh kode kalau mau kirim email beneran (TIDAK dipakai di tugas):
     #
     # sender = "youremail@example.com"
     # receiver = "admin@example.com"
@@ -130,7 +125,17 @@ def save_summary_to_file(summary_text, filename="system_summary.txt"):
 
 if __name__ == "__main__":
     df = load_data()
+
     if df is not None:
+        # Tambahkan 1 baris log palsu agar CPU > 90% untuk simulasi alert
+        if {"timestamp", "cpu", "mem", "disk"}.issubset(df.columns):
+            df.loc[len(df)] = {
+                "timestamp": "2025-12-10 12:00",
+                "cpu": 95,
+                "mem": 70,
+                "disk": 50,
+            }
+
         # 1) Hitung berapa kali CPU > 80%
         high_cpu_count = count_high_cpu(df, threshold=80)
         print(f"CPU usage exceeded 80% a total of {high_cpu_count} times.\n")
@@ -146,7 +151,7 @@ if __name__ == "__main__":
         if "cpu" in df.columns and df["cpu"].max() > 90:
             max_cpu = df["cpu"].max()
             email_msg = (
-                f"Alert! CPU usage exceeded 90%.\n"
+                "Alert! CPU usage exceeded 90%.\n"
                 f"Maximum recorded CPU usage: {max_cpu:.2f}%."
             )
             send_email_alert(email_msg)
